@@ -40,7 +40,7 @@ app.get("/", (req, res) => {
   res.send("Server started");
 });
 
-app.get("/", (err, req, res, next) => {
+app.use((err, req, res, next) => {
   res.status(err.status || 500).json(err.message);
 });
 
