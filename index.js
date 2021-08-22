@@ -44,6 +44,6 @@ app.get("/", (err, req, res, next) => {
   res.status(err.status || 500).json(err.message);
 });
 
-server.listen(process.env.PORT || 5000, () => {
+server.listen(process.env.PORT, () => {
   console.log(`app listening to port ${process.env.PORT}`);
 });
