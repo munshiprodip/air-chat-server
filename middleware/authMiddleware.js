@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const { check, validationResult } = require("express-validator");
 
 const checkLogin = async (req, res, next) => {
   const cookies =
@@ -19,7 +20,45 @@ const checkLogin = async (req, res, next) => {
         },
       });
     }
+  } else {
+    res.status(402).json({
+      errors: {
+        common: {
+          msg: "Authentication failed",
+        },
+      },
+    });
   }
 };
 
-module.exports = { checkLogin };
+const loginDataValidator = [
+  check("email")
+    .isLength({ min: 1 })
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("Invalid email address")
+    .trim(),
+
+  check("password")
+    .isLength({ min: 1 })
+    .withMessage("Password is required")
+    .trim(),
+];
+
+const loginDataValidatorResultHandler = (req, res, next) => {
+  const errors = validationResult(req);
+  const mappedErrors = errors.mapped();
+  if (Object.keys(mappedErrors).length > 0) {
+    res.status(500).json({
+      errors: mappedErrors,
+    });
+  } else {
+    next();
+  }
+};
+
+module.exports = {
+  checkLogin,
+  loginDataValidator,
+  loginDataValidatorResultHandler,
+};

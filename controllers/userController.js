@@ -28,6 +28,28 @@ async function addUser(req, res, next) {
   }
 }
 
+async function getAllUsers(req, res, next) {
+  // save user or send error
+  try {
+    const user = await User.find({ _id: { $ne: req.user.id } });
+    res.status(200).json({
+      data: {
+        user: user,
+      },
+      message: "Success",
+    });
+  } catch (err) {
+    res.status(500).json({
+      errors: {
+        common: {
+          msg: "Unknown error occured!",
+        },
+      },
+    });
+  }
+}
+
 module.exports = {
   addUser,
+  getAllUsers,
 };

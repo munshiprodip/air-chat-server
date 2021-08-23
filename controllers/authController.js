@@ -3,17 +3,17 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 
 async function signUp(req, res, next) {
-  const hashedPassword = await bcrypt.hash(req.body.password, 10);
-  const newUser = new User({
-    name: req.body.name,
-    email: req.body.email,
-    password: hashedPassword,
-    photoUrl: req.body.name,
-    isOnline: 1,
-  });
-
   // save user or send error
   try {
+    const hashedPassword = await bcrypt.hash(req.body.password, 10);
+
+    const newUser = new User({
+      name: req.body.name,
+      email: req.body.email,
+      password: hashedPassword,
+      photoUrl: req.files[0].filename,
+      isOnline: 1,
+    });
     const user = await newUser.save();
 
     const userInfo = {
@@ -62,7 +62,9 @@ const login = async (req, res, next) => {
       if (isPasswordValid) {
         const userInfo = {
           id: user._id,
+          name: user.name,
           email: user.email,
+          photoUrl: user.photoUrl,
         };
         const token = jwt.sign(userInfo, process.env.JWT_SECRET, {
           expiresIn: process.env.JWT_EXPIRATION,
@@ -79,6 +81,14 @@ const login = async (req, res, next) => {
             user: userInfo,
           },
           message: "Signin successfully!",
+        });
+      } else {
+        res.status(402).json({
+          errors: {
+            common: {
+              msg: "Authentication failed",
+            },
+          },
         });
       }
     } else {
@@ -123,7 +133,20 @@ const getLoggedinUser = async (req, res, next) => {
         },
       });
     }
+  } else {
+    res.status(402).json({
+      errors: {
+        common: {
+          msg: "Authentication failed",
+        },
+      },
+    });
   }
 };
 
-module.exports = { signUp, login, getLoggedinUser };
+const logout = async (req, res) => {
+  res.clearCookie(process.env.COOKIE_NAME);
+  res.send("logged out");
+};
+
+module.exports = { signUp, login, getLoggedinUser, logout };
