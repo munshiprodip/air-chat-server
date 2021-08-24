@@ -8,29 +8,29 @@ async function addConversation(req, res, next) {
     participant: req.body.participant_id,
   });
 
-
-  // 
+  //
   try {
     let conversation = await Conversation.findOne({
       $or: [
         {
-          creator: req.user.id, participant: req.body.participant_id,
+          creator: req.user.id,
+          participant: req.body.participant_id,
         },
         {
-          creator: req.body.participant_id, participant: req.user.id,
+          creator: req.body.participant_id,
+          participant: req.user.id,
         },
       ],
     });
 
-    if(!conversation){
+    if (!conversation) {
       conversation = await newConversation.save();
       req.conversation = conversation;
       next();
-    }else{
-      req.conversation = conversation
+    } else {
+      req.conversation = conversation;
       next();
     }
-
   } catch (err) {
     res.status(500).json({
       errors: {
@@ -43,14 +43,14 @@ async function addConversation(req, res, next) {
 }
 
 async function getMessages(req, res, next) {
-  // 
+  //
   try {
-    const receiver = await User.findOne({_id:req.body.participant_id})
-    let messages = await Message.find({conversation:req.conversation._id});
+    const receiver = await User.findOne({ _id: req.body.participant_id });
+    let messages = await Message.find({ conversation: req.conversation._id });
     res.status(200).json({
       data: {
-        conversation:req.conversation,
-        receiver:receiver,
+        conversation: req.conversation,
+        receiver: receiver,
         messages: messages,
       },
       message: "Success!",
@@ -63,15 +63,13 @@ async function getMessages(req, res, next) {
         },
       },
     });
-
   }
 }
-
 
 async function addMessage(req, res, next) {
   let newMessage = new Message({
     conversation: req.body.conversation,
-    sender: req.body.sender,
+    sender: req.user.id,
     receiver: req.body.receiver,
     text: req.body.text,
   });
@@ -79,6 +77,9 @@ async function addMessage(req, res, next) {
   // save user or send error
   try {
     const message = await newMessage.save();
+
+    global.io.emit("message-sent", message);
+
     res.status(200).json({
       data: {
         message: message,
@@ -95,6 +96,7 @@ async function addMessage(req, res, next) {
     });
   }
 }
+
 async function updateMessage(req, res, next) {
   // save user or send error
   try {

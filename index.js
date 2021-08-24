@@ -14,6 +14,14 @@ dotenv.config();
 const io = require("socket.io")(server);
 global.io = io;
 
+io.on("connection", function (socket) {
+  console.log("user connected");
+
+  socket.on("disconnect", function () {
+    console.log("user disconnected");
+  });
+});
+
 app.locals.moment = moment;
 app.use(express.json());
 app.use(cors({ credentials: true, origin: "http://localhost:3000" }));
@@ -41,9 +49,10 @@ app.use("/message", messageRoute);
 
 // set static folder
 app.use(express.static(path.join(__dirname, "public/uploads")));
+app.use(express.static(path.join(__dirname, "client/build")));
 
-app.get("/", (req, res) => {
-  res.send("Server started");
+app.get("*", (req, res) => {
+  res.sendFile(path.resolve(__dirname, "client", "build", "index.html"));
 });
 
 app.use(errorHandler);
