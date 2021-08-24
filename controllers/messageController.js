@@ -1,4 +1,72 @@
 const Message = require("../models/Message");
+const Conversation = require("../models/Conversation");
+const User = require("../models/User");
+
+async function addConversation(req, res, next) {
+  let newConversation = new Conversation({
+    creator: req.user.id,
+    participant: req.body.participant_id,
+  });
+
+
+  // 
+  try {
+    let conversation = await Conversation.findOne({
+      $or: [
+        {
+          creator: req.user.id, participant: req.body.participant_id,
+        },
+        {
+          creator: req.body.participant_id, participant: req.user.id,
+        },
+      ],
+    });
+
+    if(!conversation){
+      conversation = await newConversation.save();
+      req.conversation = conversation;
+      next();
+    }else{
+      req.conversation = conversation
+      next();
+    }
+
+  } catch (err) {
+    res.status(500).json({
+      errors: {
+        common: {
+          msg: "Unknown error occured!",
+        },
+      },
+    });
+  }
+}
+
+async function getMessages(req, res, next) {
+  // 
+  try {
+    const receiver = await User.findOne({_id:req.body.participant_id})
+    let messages = await Message.find({conversation:req.conversation._id});
+    res.status(200).json({
+      data: {
+        conversation:req.conversation,
+        receiver:receiver,
+        messages: messages,
+      },
+      message: "Success!",
+    });
+  } catch (err) {
+    res.status(500).json({
+      errors: {
+        common: {
+          msg: "Unknown error occured!",
+        },
+      },
+    });
+
+  }
+}
+
 
 async function addMessage(req, res, next) {
   let newMessage = new Message({
@@ -62,6 +130,8 @@ async function updateMessage(req, res, next) {
 }
 
 module.exports = {
+  addConversation,
+  getMessages,
   addMessage,
   updateMessage,
 };
