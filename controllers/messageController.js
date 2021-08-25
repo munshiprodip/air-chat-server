@@ -76,9 +76,8 @@ async function addMessage(req, res, next) {
 
   // save user or send error
   try {
+    global.io.emit("message-sent", newMessage);
     const message = await newMessage.save();
-
-    global.io.emit("message-sent", message);
 
     res.status(200).json({
       data: {
