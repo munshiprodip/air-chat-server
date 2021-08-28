@@ -16,7 +16,7 @@ async function getConversation(req, res, next) {
       ],
     })
       .populate("creator")
-      .populate("perticipant");
+      .populate("participant");
 
     //
     const resData = await Promise.all(
@@ -32,7 +32,7 @@ async function getConversation(req, res, next) {
           return {
             message,
             currentReceiver:
-              conversation.creator._id !== req.user.id
+              conversation.creator._id != req.user.id
                 ? conversation.creator
                 : conversation.participant,
           };
