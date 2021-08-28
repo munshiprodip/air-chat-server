@@ -2,6 +2,81 @@ const Message = require("../models/Message");
 const Conversation = require("../models/Conversation");
 const User = require("../models/User");
 
+async function getConversation(req, res, next) {
+  //
+  try {
+    let conversations = await Conversation.find({
+      $or: [
+        {
+          creator: req.user.id,
+        },
+        {
+          participant: req.user.id,
+        },
+      ],
+    })
+      .populate("creator")
+      .populate("perticipant");
+
+    //
+    const resData = await Promise.all(
+      conversations.map(async (conversation) => {
+        try {
+          const message = await Message.findOne({
+            conversation: conversation._id,
+          })
+            .populate("sender")
+            .populate("receiver")
+            .sort("-createdAt");
+
+          return {
+            message,
+            currentReceiver:
+              conversation.creator._id !== req.user.id
+                ? conversation.creator
+                : conversation.participant,
+          };
+        } catch (error) {
+          res.status(500).json({
+            errors: {
+              common: {
+                msg: "Unknown error occured!",
+              },
+            },
+          });
+        }
+      })
+    );
+
+    //
+    if (resData) {
+      res.status(200).json({
+        data: {
+          conversations: conversations,
+          msg: resData,
+        },
+        message: "Success!",
+      });
+    } else {
+      res.status(500).json({
+        errors: {
+          common: {
+            msg: "Unknown error occured!",
+          },
+        },
+      });
+    }
+  } catch (err) {
+    res.status(500).json({
+      errors: {
+        common: {
+          msg: "Unknown error occured!",
+        },
+      },
+    });
+  }
+}
+
 async function addConversation(req, res, next) {
   let newConversation = new Conversation({
     creator: req.user.id,
@@ -131,6 +206,7 @@ async function updateMessage(req, res, next) {
 }
 
 module.exports = {
+  getConversation,
   addConversation,
   getMessages,
   addMessage,

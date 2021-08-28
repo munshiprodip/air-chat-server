@@ -17,6 +17,11 @@ global.io = io;
 io.on("connection", function (socket) {
   console.log("user connected");
 
+  socket.on("typing", (data) => {
+    io.emit("receiver-typing", data);
+    console.log(data);
+  });
+
   socket.on("disconnect", function () {
     console.log("user disconnected");
   });
